@@ -31,7 +31,7 @@ typedef struct thread_pool
     volatile short stopAllThread;
     volatile short ignoreTheTasksInQueue;
     int numOfThreads;
-    pthread_mutex_t tpMutex;
+    pthread_mutex_t tpMutex; // mutex to access 'taskQueue'
     OSQueue* taskQueue;
     pthread_t* threads;
     InsertingTask* insertingTask;
