@@ -30,7 +30,7 @@ void test_thread_pool_sanity()
 
     for(i=0; i<10; ++i)
     {
-        tpInsertTask(tp,hello,(&a));
+        tpInsertTask(tp,hello,NULL);
     }
 
     tpDestroy(tp,1);
