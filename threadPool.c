@@ -1,5 +1,3 @@
-// Neriya Shulman 208275024
-
 #include <pthread.h>
 #include <unistd.h>
 #include "threadPool.h"
@@ -100,6 +98,8 @@ ThreadPool* tpCreate(int numOfThreads){
     if (tp->threads == NULL || tp->insertingTask == NULL) {
         write(STDERR_FILENO, "Error in system call‬‬", 20);
         free(tp);
+        if(tp->threads != NULL)
+            free(tp->threads);
         return NULL;
     }
 
@@ -145,10 +145,7 @@ void destroyThreadPool(ThreadPool* threadPool, int shouldWaitForTasks) {
         threadPool->ignoreTheTasksInQueue = 1;
     }
 
-
     pthread_mutex_lock(&threadPool->insertingTask->numOfTasMutex);
-
-
 
     //if there is task that is already inserting now to the queue:
     if (threadPool->insertingTask->numOfTaskThatAreInserting > 0) {
@@ -201,6 +198,7 @@ int tpInsertTask(ThreadPool* threadPool, void (*computeFunc) (void *), void* par
 
     InsertingTask* it = threadPool->insertingTask;
 
+    // block 'numOfTasMutex' to avoid an edge case that the threadPool has been deleted.
     pthread_mutex_lock(&it->numOfTasMutex);
     ++it->numOfTaskThatAreInserting;
     pthread_mutex_unlock(&it->numOfTasMutex);
@@ -213,8 +211,6 @@ int tpInsertTask(ThreadPool* threadPool, void (*computeFunc) (void *), void* par
     task->computeFunc = computeFunc;
     task->param = param;
 
-    //TODO: check memory leak.
-
     if (threadPool->stopAllThread == 0) {
 
         pthread_mutex_lock(&threadPool->tpMutex);
@@ -222,10 +218,12 @@ int tpInsertTask(ThreadPool* threadPool, void (*computeFunc) (void *), void* par
         pthread_cond_signal(&it->addedNewTaskCond);
         pthread_mutex_unlock(&threadPool->tpMutex);
 
+        // block 'numOfTasMutex' to avoid an edge case that the threadPool has been deleted.
         pthread_mutex_lock(&it->numOfTasMutex);
         --it->numOfTaskThatAreInserting;
         pthread_mutex_unlock(&it->numOfTasMutex);
 
+        // signal that there is no new task and the threadPool can be deleted.
         if (it->numOfTaskThatAreInserting == 0) {
             pthread_cond_signal(&it->deleteThreadPool);
         }
