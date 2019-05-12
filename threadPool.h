@@ -1,5 +1,3 @@
-// Neriya Shulman 208275024
-
 #ifndef EX4_THREADPOOL_H
 #define EX4_THREADPOOL_H
 
